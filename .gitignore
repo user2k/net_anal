@@ -1,0 +1,7 @@
+__pycache__/
+*.py[cod]
+.typing-tools/
+build/
+dist/
+*.egg-info/
+pyright-diagnostics.json

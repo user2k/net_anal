@@ -1,0 +1,22 @@
+{
+  "include": [
+    "i18n",
+    "help",
+    "scripts",
+    "tests"
+  ],
+  "exclude": [
+    "**/__pycache__",
+    ".typing-tools"
+  ],
+  "pythonVersion": "3.9",
+  "typeCheckingMode": "basic",
+  "extraPaths": [
+    ".typing-tools/qt-stubs",
+    "D:/qgis422/apps/qgis/python",
+    "D:/qgis422/apps/Python312/Lib/site-packages"
+  ],
+  "reportMissingModuleSource": "none",
+  "typeshedPath": ".typing-tools/pyright/dist/dist/typeshed-fallback",
+  "reportOptionalMemberAccess": "none"
+}

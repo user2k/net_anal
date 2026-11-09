@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+[general]
+name=NetAnal
+qgisMinimumVersion=3.44
+qgisMaximumVersion=4.99
+description=Plugin for network analysis to/from source, with tool to reverse vector
+version=0.1
+author=Michał Kozdronkiewicz / Codex
+email=user2k@gmail.com
+about=Plugin for network analysis of vector layers.
+hasProcessingProvider=no
+category=Vector
+icon=icon.png
+experimental=True

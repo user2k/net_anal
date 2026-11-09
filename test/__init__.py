@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Michał Kozdronkiewicz / Codex
+# import qgis libs so that ve set the correct sip api version
+import qgis   # pylint: disable=W0611  # NOQA
