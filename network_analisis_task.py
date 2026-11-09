@@ -6,7 +6,6 @@ from qgis.core import (
     QgsMessageLog
     )
 from typing import Iterator, cast
-from . import qgis_compat
 from .qgis_compat import TASK_CAN_CANCEL
 from qgis.PyQt.QtCore import pyqtSignal
 
@@ -16,7 +15,7 @@ BOTH_DIRECTIONS = 3
 
 class Network_Analisys_Task(QgsTask):
 
-    batch_ready = pyqtSignal(object, float)
+    batch_ready = pyqtSignal(object, float, int)
     def __init__(self,
                  provider_type,
                  layer_uri,
@@ -49,6 +48,8 @@ class Network_Analisys_Task(QgsTask):
         cutoffs_ids = set(self.cutoff_ids)
         new_ids = set(self.selected_ids) - cutoffs_ids
         batch_length = 0.0
+        send_ids = set()
+        send_len = 0.0
         while(len(new_ids)):
             if self.isCanceled():
                 return False
@@ -60,16 +61,16 @@ class Network_Analisys_Task(QgsTask):
             for f in features:
                 if self.isCanceled():
                     return False
-                g = f.geometry()
-                l = g.constGet()
+                g1 = f.geometry()
+                l1 = g1.constGet()
 
-                if not isinstance(l, QgsCurve) or l.isEmpty():
+                if not isinstance(l1, QgsCurve) or l1.isEmpty():
                     not_used_ids.update([f.id()])
                     continue
                 if self.anal_type == TO_SOURCE or self.anal_type == BOTH_DIRECTIONS:
-                    pts.append(l.startPoint())
+                    pts.append(l1.startPoint())
                 if self.anal_type == FROM_SOURCE or self.anal_type == BOTH_DIRECTIONS:
-                    pts.append(l.endPoint())
+                    pts.append(l1.endPoint())
 
             if self.tol == 0:
                 temp_tol = 0.01
@@ -116,7 +117,16 @@ class Network_Analisys_Task(QgsTask):
                             new_ids.add(f2.id())
                             batch_length += g2.length()
             if new_ids:
-                self.batch_ready.emit(tuple(new_ids), batch_length)
+                send_ids.update(new_ids)
+                send_len = send_len + batch_length
+                if len(send_ids)>=100:
+                    ignored_count = len(not_used_ids)
+                    self.batch_ready.emit(tuple(send_ids), send_len, ignored_count)
+                    send_ids.clear()
+                    send_len = 0.0
+        if send_ids or not_used_ids:
+            ignored_count = len(not_used_ids)
+            self.batch_ready.emit(tuple(send_ids), send_len, ignored_count)
         return True
 
     def finished(self,result):

@@ -14,7 +14,7 @@ except AttributeError:
 
 try:
     VECTOR_LAYER = Qgis.LayerType.Vector
-except:
+except AttributeError:
     VECTOR_LAYER = getattr(QgsMapLayer, 'VectorLayer')
 
 try:

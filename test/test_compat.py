@@ -6,7 +6,7 @@ import runpy
 import sys
 from types import ModuleType, SimpleNamespace
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 from qgis.core import QgsVectorLayer
 
@@ -42,16 +42,6 @@ class CompatibilityTest(unittest.TestCase):
             with self.subTest(expected=expected), patch.object(qt_compat, 'Qt', fake_qt):
                 self.assertEqual(qt_compat.qt_enum('WindowType', 'WindowStaysOnTopHint'), expected)
 
-    def test_exec_dialog_uses_modern_method_when_present(self):
-        dialog = SimpleNamespace(exec=Mock(return_value=1), exec_=Mock())
-        self.assertEqual(qt_compat.exec_dialog(dialog), 1)
-        dialog.exec.assert_called_once_with()
-        dialog.exec_.assert_not_called()
-
-    def test_exec_dialog_falls_back_to_legacy_method(self):
-        dialog = SimpleNamespace(exec_=Mock(return_value=0))
-        self.assertEqual(qt_compat.exec_dialog(dialog), 0)
-        dialog.exec_.assert_called_once_with()
 
 
 if __name__ == '__main__':

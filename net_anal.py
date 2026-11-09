@@ -177,8 +177,6 @@ class NetAnal:
         self._cutoff_band = None
         self._project_connections = []
         self._layer_connections = []
-        self.selected_count_prefix = self.tr('Selected: ')
-        self.length_prefix = self.tr('Length: ')
         self.curlen = 0
         self.cursel = 0
         self.analysis_running = False
@@ -192,6 +190,10 @@ class NetAnal:
             self.translator = QTranslator()
             self.translator.load(locale_path)
             QCoreApplication.installTranslator(self.translator)
+
+        self.selected_count_prefix = self.tr('Selected: ')
+        self.length_prefix = self.tr('Length: ')
+        self.ignored_count_prefix = self.tr('Ignored: ')
 
         self.actions = []
         self.menu = self.tr(u'&NetAnal')
@@ -273,7 +275,7 @@ class NetAnal:
     def run(self):
         """Run method that performs all the real work"""
 
-        if self.first_start == True:
+        if self.first_start:
             self.first_start = False
             self.dlg = NetAnalDialog()
             self.dlg.layer_selected.connect(self._select_layer)
@@ -321,7 +323,7 @@ class NetAnal:
         selected_ids = tuple(fid for fid in layer.selectedFeatureIds() if fid not in blocked_ids)
         if not selected_ids:
             return
-        if self.dlg.radioButton_exact_match.isChecked() == True:
+        if self.dlg.radioButton_exact_match.isChecked():
             tol = 0
         else:
             if not self.dlg.lineEdit_tolerance.hasAcceptableInput():
@@ -332,13 +334,14 @@ class NetAnal:
                 msgBox.activateWindow()
                 return
             tol = float(self.dlg.lineEdit_tolerance.text())
-        if self.dlg.radioButton_to_source.isChecked() == True:
+        if self.dlg.radioButton_to_source.isChecked():
             anal_type = TO_SOURCE
-        elif self.dlg.radioButton_from_source.isChecked() == True:
+        elif self.dlg.radioButton_from_source.isChecked():
             anal_type = FROM_SOURCE
         else:
             anal_type = BOTH_DIRECTIONS
 
+        self.dlg.label_ignored_count.setText(self.ignored_count_prefix + '0')
         self.netanaltask = Network_Analisys_Task(
                 provider_type=provider_type,
                 layer_uri=layer_uri,
@@ -358,7 +361,7 @@ class NetAnal:
         self.analysis_running = True
         QgsApplication.taskManager().addTask(self.netanaltask)
 
-    def _apply_analysis_batch(self, feature_ids, batch_length):
+    def _apply_analysis_batch(self, feature_ids, batch_length, ignored_count):
         if not self.analysis_running:
             return
 
@@ -368,6 +371,9 @@ class NetAnal:
 
         incoming_ids = set(feature_ids)
         accepted_ids = incoming_ids - set(self.cutoff_feature_ids) - set(layer.selectedFeatureIds())
+        self.dlg.label_ignored_count.setText(
+            self.ignored_count_prefix + f'{ignored_count}'
+        )
         if not accepted_ids:
             return
         if accepted_ids != incoming_ids:
@@ -613,12 +619,14 @@ class NetAnal:
         if not isinstance(layer, QgsVectorLayer):
             self.dlg.label_total_length.setText(self.length_prefix)
             self.dlg.label_selected_count.setText(self.selected_count_prefix)
+            self.dlg.label_ignored_count.setText(self.ignored_count_prefix + '0')
             self.curlen = 0
             self.cursel = 0
             return
         if layer.selectedFeatureCount() == 0:
             self.dlg.label_total_length.setText(self.length_prefix)
             self.dlg.label_selected_count.setText(self.selected_count_prefix)
+            self.dlg.label_ignored_count.setText(self.ignored_count_prefix + '0')
             self.curlen = 0
             self.cursel = 0
             return
@@ -648,6 +656,8 @@ class NetAnal:
             layer = None
         selected_id = layer.id() if layer is not None else None
         if selected_id != self.selected_layer_id or layer is not self.selected_layer:
+            if getattr(self, 'dlg', None) is not None:
+                self.dlg.label_ignored_count.setText(self.ignored_count_prefix + '0')
             if self.analysis_running:
                 self._cancel_analysis()
             self._reset_cutoffs()

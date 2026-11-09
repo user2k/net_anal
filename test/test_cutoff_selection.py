@@ -133,14 +133,40 @@ class CutoffSelectionTest(unittest.TestCase):
         self.plugin._toggle_cutoffs([cutoff])
         self.layer.selectByIds([seed])
         self.plugin.analysis_running = True
-        self.plugin._apply_analysis_batch((seed, cutoff, branch), 3.0)
+        self.plugin._apply_analysis_batch((seed, cutoff, branch), 3.0, 0)
         self.assertEqual(set(self.layer.selectedFeatureIds()), {seed, branch})
         self.assertEqual(self.plugin.cursel, 2)
         self.assertAlmostEqual(self.plugin.curlen, 2.0)
-        self.plugin._apply_analysis_batch((seed, cutoff, branch), 3.0)
+        self.plugin._apply_analysis_batch((seed, cutoff, branch), 3.0, 0)
         self.assertAlmostEqual(self.plugin.curlen, 2.0)
         self.assert_disjoint()
         self.plugin.analysis_running = False
+
+    def test_empty_batch_updates_cumulative_ignored_count(self):
+        seed = self.ids['seed']
+        self.layer.selectByIds([seed])
+        self.plugin.analysis_running = True
+        self.plugin._apply_analysis_batch((), 0.0, 2)
+        self.assertEqual(self.plugin.dlg.label_ignored_count.text(),
+                         self.plugin.ignored_count_prefix + '2')
+        self.plugin._apply_analysis_batch((), 0.0, 3)
+        self.assertEqual(self.plugin.dlg.label_ignored_count.text(),
+                         self.plugin.ignored_count_prefix + '3')
+        self.assertEqual(self.layer.selectedFeatureIds(), [seed])
+        self.plugin.analysis_running = False
+
+    def test_task_reports_ignored_seed_without_new_selected_features(self):
+        feature = QgsFeature(self.layer.fields())
+        feature['name'] = 'empty'
+        self.assertTrue(self.layer.dataProvider().addFeatures([feature])[0])
+        ignored_id = next(f.id() for f in self.layer.getFeatures()
+                          if f['name'] == 'empty')
+        task = self.make_task((ignored_id,))
+        batches = []
+        task.batch_ready.connect(
+            lambda ids, length, ignored: batches.append((ids, length, ignored)))
+        self.assertTrue(task.run(), task.error_message)
+        self.assertEqual(batches, [((), 0.0, 1)])
 
     def test_changing_cutoffs_cancels_analysis_and_ignores_late_packets(self):
         seed, branch = self.ids['seed'], self.ids['branch']
@@ -151,7 +177,7 @@ class CutoffSelectionTest(unittest.TestCase):
         self.plugin._toggle_cutoffs([seed])
         self.assertTrue(task.isCanceled())
         self.assertFalse(self.plugin.analysis_running)
-        self.plugin._apply_analysis_batch((branch,), 1.0)
+        self.plugin._apply_analysis_batch((branch,), 1.0, 0)
         self.assertEqual(self.layer.selectedFeatureIds(), [])
         self.assert_disjoint()
         self.plugin._stop_search()
@@ -168,7 +194,7 @@ class CutoffSelectionTest(unittest.TestCase):
         combo.setCurrentIndex(combo.findData(other.id()))
         self.assertTrue(task.isCanceled())
         self.assertFalse(self.plugin.analysis_running)
-        self.plugin._apply_analysis_batch((seed,), 1.0)
+        self.plugin._apply_analysis_batch((seed,), 1.0, 0)
         self.assertEqual(other.selectedFeatureIds(), [])
         self.plugin._stop_search()
 
@@ -177,7 +203,7 @@ class CutoffSelectionTest(unittest.TestCase):
         self.plugin._toggle_cutoffs([cutoff])
         task = self.make_task((cutoff,))
         batches = []
-        task.batch_ready.connect(lambda ids, length: batches.append((ids, length)))
+        task.batch_ready.connect(lambda ids, length, ignored: batches.append((ids, length, ignored)))
         self.assertTrue(task.run())
         self.assertEqual(batches, [])
 

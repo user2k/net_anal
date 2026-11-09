@@ -16,22 +16,9 @@ def qt_enum(group, name):
     scoped = getattr(Qt, group, None)
     return getattr(scoped, name) if scoped is not None else getattr(Qt, name)
 
-
-def exec_dialog(dialog):
-    return dialog.exec() if hasattr(dialog, 'exec') else dialog.exec_()
-
 from qgis.PyQt.QtWidgets import QDockWidget, QLabel, QListWidget, QPushButton, QVBoxLayout, QWidget
 
 try:
     from qgis.PyQt.QtGui import QAction
 except ImportError:
     from qgis.PyQt.QtWidgets import QAction
-
-try:
-    RIGHT_DOCK_AREA = Qt.DockWidgetArea.RightDockWidgetArea
-except AttributeError:
-    RIGHT_DOCK_AREA = getattr(Qt, 'RightDockWidgetArea')
-
-
-def load_ui(path, widget):
-    return uic.loadUi(str(path), widget)
