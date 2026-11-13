@@ -2,7 +2,7 @@
 
 A QGIS plugin for tracing connected line features towards a source, away from a source, or in both directions. Results are added to the layer's selection as the analysis runs, with a selected feature count and total geometry length shown in the dialog.
 
-The plugin is under development and marked as experimental. Its declared QGIS version range is **3.44–4.99**, with compatibility helpers for Qt 5 and Qt 6.
+Version 0.2 is a stable release. Its declared QGIS version range is **3.44–4.99**, with compatibility helpers for Qt 5 and Qt 6.
 
 ## Installation
 
